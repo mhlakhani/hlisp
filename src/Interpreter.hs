@@ -291,7 +291,7 @@ expandInterpreter !state@(Call expr args, env) = state'
                             True -> (LispError $ NumArgs (toInteger $ length margs) args, env)
                             False -> mstate'
                                 where
-                                    !e'' = forkEnvironmentForFunctionCall env $ zip margs args --makeChildEnvironmentWith env $ zip margs args
+                                    !e'' = forkEnvironmentForFunctionCall env $ zip margs args
                                     !(!expr', !env') = evalInterpreter (expr, e'')
                                     !env'' = forkEnvironmentFromFunctionCall env'
                                     !mstate' = (expr', env'')

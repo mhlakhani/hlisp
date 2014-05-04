@@ -143,7 +143,6 @@ setSymbolValues !env !syms = env'
         !env' = foldl' helper env syms
 
 getParentEnvironment :: Environment -> Environment 
---getParentEnvironment !env = fromJustNote "getParentEnvironment" $ parent env
 getParentEnvironment !env = env'
     where
         !par = fromJustNote "getParentEnvironment" $ parent env

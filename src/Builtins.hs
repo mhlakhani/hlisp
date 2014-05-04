@@ -90,11 +90,11 @@ arithOps2 = binaryArithOp "add" (+) ++ binaryArithOp "sub" (-) ++ binaryArithOp 
 -- List Functions
 listCar :: LispVal -> LispVal
 listCar val@(List []) = LispError $ IllegalArgument "car" val
-listCar val@(List (x:xs)) = result where !result = x
+listCar val@(List (x:xs)) = x
 
 listCdr :: LispVal -> LispVal
 listCdr val@(List []) = LispError $ IllegalArgument "cdr" val
-listCdr val@(List (x:xs)) = result where !result = List xs
+listCdr val@(List (x:xs)) = List xs
 
 listOps1 :: [(Name, LispVal -> LispVal)]
 listOps1 = [
