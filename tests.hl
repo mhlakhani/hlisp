@@ -1,0 +1,160 @@
+(define run-test
+  (lambda (test expected)
+    (if (eq? expected :ignore)
+      #t
+      (if (eq? test expected)
+        #t
+        [test expected]
+      )
+    )
+  )
+)
+
+(define run-tests
+  (lambda (cases expected)
+    (zipWith run-test cases expected)
+  )
+)
+
+
+(define lis-cases
+  [
+    (+ 2 2)
+    (+ (* 2 100) (* 1 10))
+    (if (> 6 5) (+ 1 1) (+ 2 2))
+    (if (< 6 5) (+ 1 1) (+ 2 2))
+    (define x 3)
+    x
+    (+ x x)
+    (begin (define x 1) (set! x (+ x 1)) (+ x 1))
+    ((lambda (x) (+ x x)) 5)
+    (define twice (lambda (x) (* 2 x)))
+    (twice 5)
+    (define compose (lambda (f g) (lambda (x) (f (g x)))))
+    ((compose list twice) 5)
+    (define repeat (lambda (f) (compose f f)))
+    ((repeat twice) 5)
+    ((repeat (repeat twice)) 5)
+    (define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1))))))
+    (fact 3)
+    (fact 50)
+    [(abs -3) (abs 0) (abs 3)]
+    (define combine (lambda (f)
+      (lambda (x y)
+      (if (null? x) []
+          (f [(car x) (car y)]
+             ((combine f) (cdr x) (cdr y)))))))
+    (define zip' (combine cons))
+    (zip' [1 2 3 4] [5 6 7 8])
+    (define riff-shuffle (lambda (deck) (begin
+      (define take (lambda (n seq) (if (<= n 0) [] (cons (car seq) (take (- n 1) (cdr seq))))))
+      (define drop (lambda (n seq) (if (<= n 0) seq (drop (- n 1) (cdr seq)))))
+      (define mid (lambda (seq) (/ (length seq) 2)))
+      ((combine append) (take (mid deck) deck) (drop (mid deck) deck))))) 
+    (riff-shuffle [1 2 3 4 5 6 7 8])
+    ((repeat riff-shuffle) [1 2 3 4 5 6 7 8])
+    (riff-shuffle (riff-shuffle (riff-shuffle [1 2 3 4 5 6 7 8])))
+  ]
+)
+
+(define lis-expected
+  [
+    4
+    210
+    2
+    4
+    3
+    3
+    6
+    3
+    10
+    :ignore
+    10
+    :ignore
+    [10]
+    :ignore
+    20
+    80
+    :ignore
+    6
+    30414093201713378043612608166064768844377641568960512000000000000
+    [3 0 3]
+    :ignore
+    :ignore
+    [[1 5] [2 6] [3 7] [4 8]]
+    :ignore
+    [1 5 2 6 3 7 4 8]
+    [1 3 5 7 2 4 6 8]
+    [1 2 3 4 5 6 7 8]
+  ]
+)
+
+(define lispy-cases
+  [
+    (define account (lambda (bal) (lambda (amt) (set! bal (+ bal amt)))))
+    (define a1 (account 100))
+    (a1 0)
+    (a1 10)
+    (a1 10)
+    (define newton
+      (lambda (guess function derivative epsilon)
+        (begin
+          (define guess2 (- guess (/ (function guess) (derivative guess))))
+          (if (< (abs (- guess guess2)) epsilon)
+            guess2
+            (newton guess2 function derivative epsilon)
+          )
+
+        )
+      )
+    )
+    (define square-root
+      (lambda (n)
+        (newton 1.0
+          (lambda (x) (- (* x x) n))
+          (lambda (x) (* 2.0 x))
+          1e-8
+        )
+      )
+    )
+    (> (square-root 200.0) 14.14213)
+    (< (square-root 200.0) 14.14215)
+    (= (square-root 200.0) 14.142135623730951)
+    (define sum-squares-range
+      (lambda (start end)
+        (begin
+          (define sumsq-acc
+            (lambda (start end acc)
+              (if (> start end)
+                acc
+                (sumsq-acc (+ start 1) end (+ (* start start) acc))
+              )
+            )
+          )
+          (sumsq-acc start end 0)
+        )
+      )
+    )
+    (sum-squares-range 1 3000)
+  ]
+)
+
+(define lispy-expected
+  [
+    :ignore
+    :ignore
+    100
+    110
+    120
+    :ignore
+    :ignore
+    #t
+    #t
+    #t
+    :ignore
+    9004500500
+  ]
+)
+
+(run-tests lis-cases lis-expected)
+(run-tests lispy-cases lispy-expected)

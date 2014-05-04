@@ -1,0 +1,174 @@
+; -- BASE OPERATORS --
+
+; builtins
+(define = __builtin__eq)
+(define eq? __builtin__eq)
+(define equals? __builtin__eq)
+(define typeof __builtin__typeof)
+
+(define or __builtin__or)
+(define and __builtin__and)
+(define not __builtin__not)
+
+; -- LISTS --
+
+; builtins
+(define car __builtin__car)
+(define cdr __builtin__cdr)
+(define length __builtin__length)
+(define cons __builtin__cons)
+(define append __builtin__append)
+(define list __builtin__list)
+(define null __builtin__null)
+(define null? __builtin__null)
+
+(define id
+  (lambda (i)
+    i
+  )
+)
+
+(define map
+  (lambda (f l)
+    (if (= 0 (length l))
+      []
+      (cons (f (car l)) (map f (cdr l)))
+    )
+  )
+)
+
+(define reduce
+  (lambda (f z l)
+    (if (= 0 (length l))
+      z
+      (reduce f (f z (car l)) (cdr l))
+    )
+  )
+)
+
+(define any?
+  (lambda (l)
+    (reduce or #f l)
+  )
+)
+
+(define all?
+  (lambda (l)
+    (reduce and #t l)
+  )
+)
+
+(define zipWith
+  (lambda (f as bs)
+    (if (or (null as) (null bs))
+      []
+      (cons (f (car as) (car bs)) (zipWith f (cdr as) (cdr bs)))
+    )
+  )
+)
+
+(define zip
+  (lambda (as bs)
+    (zipWith (lambda (a b) [a b]) as bs)
+  )
+)
+
+; -- FORMS --
+
+(defmacro cond (conds)
+  (if (null conds)
+    (__builtin__make_error_custom "cond" "no condition matched!")
+
+    (begin
+      (define cond' (car conds))
+      (define pred (car cond'))
+      (define then (car (cdr cond')))
+      (define rest (cdr conds))
+
+      `(if ,pred 
+           ,then 
+           (cond rest)
+      )
+    )
+  )
+)
+
+; -- ERRORS --
+
+; make-error
+(define make-error
+  (lambda (name)
+    (begin
+      (define make-error1
+        (lambda (fn)
+          (lambda (arg)
+            (fn arg)
+          )
+        )
+      )
+      (define make-error2
+        (lambda (fn)
+          (lambda (arg1 arg2)
+            (fn arg1 arg2)
+          )
+        )
+      )
+      (cond
+        [
+          [(= name :num-args) (make-error2 __builtin__make_error_num_args)]
+          [(= name :type-mismatch) (make-error2 __builtin__make_error_type_mismatch)]
+          [(= name :not-implemented) (make-error2 __builtin__make_error_not_implemented)]
+          [(= name :not-defined) (make-error1 __builtin__make_error_not_defined)]
+          [(= name :not-callable) (make-error1 __builtin__make_error_not_callable)]
+          [(= name :illegal-argument) (make-error2 __builtin__make_error_illegal_argument)]
+          [(= name :custom) (make-error2 __builtin__make_error_custom)]
+          [(= name :parser) (make-error1 __builtin__make_error_parser)]
+          [(= name :default) (make-error1 __builtin__make_error_default)]
+        ]
+      )
+    )
+  )
+)
+
+; -- TYPED OPERATORS --
+
+(defmacro unaryintfloatop (name intfn floatfn)
+  `(lambda (a)
+    (cond
+      [
+        [(eq? :int (typeof a)) (intfn a)]
+        [(eq? :float (typeof a)) (floatfn a)]
+        ; [#t ((make-error :type-mismatch) name (map typeof [a b]))]
+        [#t ((make-error :type-mismatch) name [a])]
+      ]
+    )
+  )
+)
+
+(defmacro binintfloatop (name intfn floatfn)
+  `(lambda (a b)
+    (cond
+      [
+        [(and (eq? :int (typeof a)) (eq? :int (typeof b))) (intfn a b)]
+        [(and (eq? :float (typeof a)) (eq? :float (typeof b))) (floatfn a b)]
+        ; [#t ((make-error :type-mismatch) name (map typeof [a b]))]
+        [#t ((make-error :type-mismatch) name [a b])]
+      ]
+    )
+  )
+)
+
+; -- ARITHMETIC --
+
+(define + (binintfloatop "add" __builtin__add_int __builtin__add_float))
+(define - (binintfloatop "sub" __builtin__sub_int __builtin__sub_float))
+(define * (binintfloatop "mul" __builtin__mul_int __builtin__mul_float))
+(define / (binintfloatop "div" __builtin__div_int __builtin__div_float))
+(define abs (unaryintfloatop "abs" __builtin__abs_int __builtin__abs_float))
+
+; -- COMPARISON --
+
+(define > (binintfloatop "gt" __builtin__gt_int __builtin__gt_float))
+(define >= (binintfloatop "gte" __builtin__gte_int __builtin__gte_float))
+(define < (binintfloatop "lt" __builtin__lt_int __builtin__lt_float))
+(define <= (binintfloatop "lte" __builtin__lte_int __builtin__lte_float))
