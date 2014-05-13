@@ -236,8 +236,8 @@ expandInterpreter !state@(If pred then' else', env) = state'
 expandInterpreter !state@(Definition name expr, env) = state'
     where
         !env' = if env `containsSymbol` name
-            then addSymbol env name $ Keyword "__builtin__definition__helper__"
-            else env
+            then env
+            else addSymbol env name $ Keyword "__builtin__definition__helper__"
         !(expr', e) = expandInterpreter (expr, env')
         !state' = (Definition name expr', e)
 
